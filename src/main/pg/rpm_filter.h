@@ -20,22 +20,19 @@
 
 #pragma once
 
-#include "io/displayport_msp.h"
+#include <stdint.h>
+
 #include "pg/pg.h"
 
-typedef struct displayPortProfile_s {
-    int8_t colAdjust;
-    int8_t rowAdjust;
-    bool invert;
-    uint8_t blackBrightness;
-    uint8_t whiteBrightness;
+typedef struct rpmFilterConfig_s
+{
+    uint8_t  rpm_filter_harmonics;     // how many harmonics should be covered with notches? 0 means filter off
+    uint8_t  rpm_filter_min_hz;        // minimum frequency of the notches
+    uint16_t rpm_filter_fade_range_hz; // range in which to gradually turn off notches down to minHz
+    uint16_t rpm_filter_q;             // q of the notches
 
-    // For attribute-rich OSDs
+    uint16_t rpm_filter_lpf_hz;        // the cutoff of the lpf on reported motor rpm
 
-    uint8_t fontSelection[DISPLAYPORT_ATTR_COUNT];
-    uint8_t useDeviceBlink;    // Use device local blink capability
-} displayPortProfile_t;
+} rpmFilterConfig_t;
 
-PG_DECLARE(displayPortProfile_t, displayPortProfileMsp);
-
-PG_DECLARE(displayPortProfile_t, displayPortProfileMax7456);
+PG_DECLARE(rpmFilterConfig_t, rpmFilterConfig);

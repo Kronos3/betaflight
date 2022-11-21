@@ -230,7 +230,7 @@ static const char * const lookupTableBlackboxSampleRate[] = {
 };
 #endif
 
-#ifdef USE_SERIAL_RX
+#ifdef USE_SERIALRX
 static const char * const lookupTableSerialRX[] = {
     "SPEK1024",
     "SPEK2048",
@@ -385,7 +385,7 @@ const char * const lookupTableRescueAltitudeMode[] = {
 
 #if defined(USE_MAX7456) || defined(USE_FRSKYOSD)
 static const char * const lookupTableVideoSystem[] = {
-    "AUTO", "PAL", "NTSC"
+    "AUTO", "PAL", "NTSC", "HD"
 };
 #endif
 
@@ -549,7 +549,7 @@ const lookupTableEntry_t lookupTables[] = {
 #ifdef USE_SERVOS
     LOOKUP_TABLE_ENTRY(lookupTableGimbalMode),
 #endif
-#ifdef USE_SERIAL_RX
+#ifdef USE_SERIALRX
     LOOKUP_TABLE_ENTRY(lookupTableSerialRX),
 #endif
 #ifdef USE_RX_SPI
@@ -745,6 +745,7 @@ const clivalue_t valueTable[] = {
     { "rssi_offset",                VAR_INT8   | MASTER_VALUE, .config.minmax = { -100, 100 }, PG_RX_CONFIG, offsetof(rxConfig_t, rssi_offset) },
     { "rssi_invert",                VAR_INT8   | MASTER_VALUE | MODE_LOOKUP, .config.lookup = { TABLE_OFF_ON }, PG_RX_CONFIG, offsetof(rxConfig_t, rssi_invert) },
     { "rssi_src_frame_lpf_period",  VAR_UINT8  | MASTER_VALUE, .config.minmaxUnsigned = { 0, UINT8_MAX }, PG_RX_CONFIG, offsetof(rxConfig_t, rssi_src_frame_lpf_period) },
+    { "rssi_smoothing",             VAR_UINT8  | MASTER_VALUE, .config.minmaxUnsigned = { 0, UINT8_MAX }, PG_RX_CONFIG, offsetof(rxConfig_t, rssi_smoothing) },
 
 #ifdef USE_RC_SMOOTHING_FILTER
     { PARAM_NAME_RC_SMOOTHING,                   VAR_UINT8  | MASTER_VALUE | MODE_LOOKUP, .config.lookup = { TABLE_OFF_ON }, PG_RX_CONFIG, offsetof(rxConfig_t, rc_smoothing_mode) },
@@ -758,7 +759,7 @@ const clivalue_t valueTable[] = {
 
     { "fpv_mix_degrees",             VAR_UINT8  | MASTER_VALUE, .config.minmaxUnsigned = { 0, 90 }, PG_RX_CONFIG, offsetof(rxConfig_t, fpvCamAngleDegrees) },
     { "max_aux_channels",            VAR_UINT8  | MASTER_VALUE, .config.minmaxUnsigned = { 0, MAX_AUX_CHANNEL_COUNT }, PG_RX_CONFIG, offsetof(rxConfig_t, max_aux_channel) },
-#ifdef USE_SERIAL_RX
+#ifdef USE_SERIALRX
     { PARAM_NAME_SERIAL_RX_PROVIDER, VAR_UINT8  | MASTER_VALUE | MODE_LOOKUP, .config.lookup = { TABLE_SERIAL_RX }, PG_RX_CONFIG, offsetof(rxConfig_t, serialrx_provider) },
     { "serialrx_inverted",           VAR_UINT8  | MASTER_VALUE | MODE_LOOKUP, .config.lookup = { TABLE_OFF_ON }, PG_RX_CONFIG, offsetof(rxConfig_t, serialrx_inverted) },
 #endif
@@ -773,11 +774,8 @@ const clivalue_t valueTable[] = {
 #if defined(USE_SERIALRX_SBUS)
     { "sbus_baud_fast",              VAR_UINT8  | MASTER_VALUE | MODE_LOOKUP, .config.lookup = { TABLE_OFF_ON }, PG_RX_CONFIG, offsetof(rxConfig_t, sbus_baud_fast) },
 #endif
-#if defined(USE_SERIALRX_CRSF)
-    { "crsf_use_rx_snr",             VAR_UINT8  | MASTER_VALUE | MODE_LOOKUP, .config.lookup = { TABLE_OFF_ON }, PG_RX_CONFIG, offsetof(rxConfig_t, crsf_use_rx_snr) },
 #if defined(USE_CRSF_V3)
     { "crsf_use_negotiated_baud",    VAR_UINT8  | MASTER_VALUE | MODE_LOOKUP, .config.lookup = { TABLE_OFF_ON }, PG_RX_CONFIG, offsetof(rxConfig_t, crsf_use_negotiated_baud) },
-#endif
 #endif
     { "airmode_start_throttle_percent", VAR_UINT8 | MASTER_VALUE, .config.minmaxUnsigned = { 0, 100 }, PG_RX_CONFIG, offsetof(rxConfig_t, airModeActivateThreshold) },
     { "rx_min_usec",                VAR_UINT16 | MASTER_VALUE, .config.minmaxUnsigned = { PWM_PULSE_MIN, PWM_PULSE_MAX }, PG_RX_CONFIG, offsetof(rxConfig_t, rx_min_usec) },
@@ -1059,9 +1057,6 @@ const clivalue_t valueTable[] = {
     { "runaway_takeoff_deactivate_delay",  VAR_UINT16  | MASTER_VALUE, .config.minmaxUnsigned = { 100, 1000 }, PG_PID_CONFIG, offsetof(pidConfig_t, runaway_takeoff_deactivate_delay) },           // deactivate time in ms
     { "runaway_takeoff_deactivate_throttle_percent",  VAR_UINT8  | MASTER_VALUE, .config.minmaxUnsigned = { 0, 100 }, PG_PID_CONFIG, offsetof(pidConfig_t, runaway_takeoff_deactivate_throttle) }, // minimum throttle percentage during deactivation phase
 #endif
-#ifdef USE_TPA_MODE
-    { PARAM_NAME_TPA_MODE,          VAR_UINT8  | MASTER_VALUE | MODE_LOOKUP, .config.lookup = { TABLE_TPA_MODE }, PG_PID_CONFIG, offsetof(pidConfig_t, tpaMode) },
-#endif
 
 // PG_PID_PROFILE
 #ifdef USE_PROFILE_NAMES
@@ -1217,6 +1212,9 @@ const clivalue_t valueTable[] = {
     { PARAM_NAME_SIMPLIFIED_GYRO_FILTER,             VAR_UINT8 | MASTER_VALUE | MODE_LOOKUP, .config.lookup = { TABLE_OFF_ON }, PG_GYRO_CONFIG, offsetof(gyroConfig_t, simplified_gyro_filter) },
     { PARAM_NAME_SIMPLIFIED_GYRO_FILTER_MULTIPLIER,  VAR_UINT8 | MASTER_VALUE, .config.minmaxUnsigned = { SIMPLIFIED_TUNING_FILTERS_MIN, SIMPLIFIED_TUNING_MAX }, PG_GYRO_CONFIG, offsetof(gyroConfig_t, simplified_gyro_filter_multiplier) },
 #endif
+#ifdef USE_TPA_MODE
+    { PARAM_NAME_TPA_MODE,          VAR_UINT8  | PROFILE_VALUE | MODE_LOOKUP, .config.lookup = { TABLE_TPA_MODE }, PG_PID_PROFILE, offsetof(pidProfile_t, tpa_mode) },
+#endif
     { PARAM_NAME_TPA_RATE,          VAR_UINT8  | PROFILE_VALUE, .config.minmaxUnsigned = { 0, TPA_MAX}, PG_PID_PROFILE, offsetof(pidProfile_t, tpa_rate) },
     { PARAM_NAME_TPA_BREAKPOINT,    VAR_UINT16 | PROFILE_VALUE, .config.minmaxUnsigned = { PWM_PULSE_MIN, PWM_PULSE_MAX }, PG_PID_PROFILE, offsetof(pidProfile_t, tpa_breakpoint) },
 
@@ -1315,7 +1313,10 @@ const clivalue_t valueTable[] = {
     { "osd_link_quality_alarm",     VAR_UINT16  | MASTER_VALUE, .config.minmaxUnsigned = { 0, 100 }, PG_OSD_CONFIG, offsetof(osdConfig_t, link_quality_alarm) },
 #endif
 #ifdef USE_RX_RSSI_DBM
-    { "osd_rssi_dbm_alarm",         VAR_INT16   | MASTER_VALUE, .config.minmax = { CRSF_RSSI_MIN, CRSF_SNR_MAX }, PG_OSD_CONFIG, offsetof(osdConfig_t, rssi_dbm_alarm) },
+    { "osd_rssi_dbm_alarm",         VAR_INT16   | MASTER_VALUE, .config.minmax = { CRSF_RSSI_MIN, CRSF_RSSI_MAX }, PG_OSD_CONFIG, offsetof(osdConfig_t, rssi_dbm_alarm) },
+#endif
+#ifdef USE_RX_RSNR
+    { "osd_rsnr_alarm",             VAR_INT16   | MASTER_VALUE, .config.minmax = { CRSF_SNR_MIN, CRSF_SNR_MAX }, PG_OSD_CONFIG, offsetof(osdConfig_t, rsnr_alarm) },
 #endif
     { "osd_cap_alarm",              VAR_UINT16 | MASTER_VALUE, .config.minmaxUnsigned = { 0, 20000 }, PG_OSD_CONFIG, offsetof(osdConfig_t, cap_alarm) },
     { "osd_alt_alarm",              VAR_UINT16 | MASTER_VALUE, .config.minmaxUnsigned = { 0, 10000 }, PG_OSD_CONFIG, offsetof(osdConfig_t, alt_alarm) },
@@ -1346,6 +1347,9 @@ const clivalue_t valueTable[] = {
 #endif
 #ifdef USE_RX_RSSI_DBM
     { "osd_rssi_dbm_pos",           VAR_UINT16  | MASTER_VALUE, .config.minmaxUnsigned = { 0, OSD_POSCFG_MAX }, PG_OSD_ELEMENT_CONFIG, offsetof(osdElementConfig_t, item_pos[OSD_RSSI_DBM_VALUE]) },
+#endif
+#ifdef USE_RX_RSNR
+    { "osd_rsnr_pos",               VAR_UINT16  | MASTER_VALUE, .config.minmaxUnsigned = { 0, OSD_POSCFG_MAX }, PG_OSD_ELEMENT_CONFIG, offsetof(osdElementConfig_t, item_pos[OSD_RSNR_VALUE]) },
 #endif
     { "osd_tim_1_pos",              VAR_UINT16  | MASTER_VALUE, .config.minmaxUnsigned = { 0, OSD_POSCFG_MAX }, PG_OSD_ELEMENT_CONFIG, offsetof(osdElementConfig_t, item_pos[OSD_ITEM_TIMER_1]) },
     { "osd_tim_2_pos",              VAR_UINT16  | MASTER_VALUE, .config.minmaxUnsigned = { 0, OSD_POSCFG_MAX }, PG_OSD_ELEMENT_CONFIG, offsetof(osdElementConfig_t, item_pos[OSD_ITEM_TIMER_2]) },
@@ -1425,6 +1429,18 @@ const clivalue_t valueTable[] = {
     { "osd_efficiency_pos",     VAR_UINT16  | MASTER_VALUE, .config.minmaxUnsigned = { 0, OSD_POSCFG_MAX }, PG_OSD_ELEMENT_CONFIG, offsetof(osdElementConfig_t, item_pos[OSD_EFFICIENCY]) },
     { "osd_total_flights_pos",     VAR_UINT16  | MASTER_VALUE, .config.minmaxUnsigned = { 0, OSD_POSCFG_MAX }, PG_OSD_ELEMENT_CONFIG, offsetof(osdElementConfig_t, item_pos[OSD_TOTAL_FLIGHTS]) },
     { "osd_aux_pos",            VAR_UINT16  | MASTER_VALUE, .config.minmaxUnsigned = { 0, OSD_POSCFG_MAX }, PG_OSD_ELEMENT_CONFIG, offsetof(osdElementConfig_t, item_pos[OSD_AUX_VALUE]) },
+
+#ifdef USE_MSP_DISPLAYPORT
+    { "osd_sys_goggle_voltage_pos", VAR_UINT16  | MASTER_VALUE, .config.minmaxUnsigned = { 0, OSD_POSCFG_MAX }, PG_OSD_ELEMENT_CONFIG, offsetof(osdElementConfig_t, item_pos[OSD_SYS_GOGGLE_VOLTAGE]) },
+    { "osd_sys_vtx_voltage_pos",    VAR_UINT16  | MASTER_VALUE, .config.minmaxUnsigned = { 0, OSD_POSCFG_MAX }, PG_OSD_ELEMENT_CONFIG, offsetof(osdElementConfig_t, item_pos[OSD_SYS_VTX_VOLTAGE]) },
+    { "osd_sys_bitrate_pos",        VAR_UINT16  | MASTER_VALUE, .config.minmaxUnsigned = { 0, OSD_POSCFG_MAX }, PG_OSD_ELEMENT_CONFIG, offsetof(osdElementConfig_t, item_pos[OSD_SYS_BITRATE]) },
+    { "osd_sys_delay_pos",          VAR_UINT16  | MASTER_VALUE, .config.minmaxUnsigned = { 0, OSD_POSCFG_MAX }, PG_OSD_ELEMENT_CONFIG, offsetof(osdElementConfig_t, item_pos[OSD_SYS_DELAY]) },
+    { "osd_sys_distance_pos",       VAR_UINT16  | MASTER_VALUE, .config.minmaxUnsigned = { 0, OSD_POSCFG_MAX }, PG_OSD_ELEMENT_CONFIG, offsetof(osdElementConfig_t, item_pos[OSD_SYS_DISTANCE]) },
+    { "osd_sys_lq_pos",             VAR_UINT16  | MASTER_VALUE, .config.minmaxUnsigned = { 0, OSD_POSCFG_MAX }, PG_OSD_ELEMENT_CONFIG, offsetof(osdElementConfig_t, item_pos[OSD_SYS_LQ]) },
+    { "osd_sys_goggle_dvr_pos",     VAR_UINT16  | MASTER_VALUE, .config.minmaxUnsigned = { 0, OSD_POSCFG_MAX }, PG_OSD_ELEMENT_CONFIG, offsetof(osdElementConfig_t, item_pos[OSD_SYS_GOGGLE_DVR]) },
+    { "osd_sys_vtx_dvr_pos",        VAR_UINT16  | MASTER_VALUE, .config.minmaxUnsigned = { 0, OSD_POSCFG_MAX }, PG_OSD_ELEMENT_CONFIG, offsetof(osdElementConfig_t, item_pos[OSD_SYS_VTX_DVR]) },
+    { "osd_sys_warnings_pos",       VAR_UINT16  | MASTER_VALUE, .config.minmaxUnsigned = { 0, OSD_POSCFG_MAX }, PG_OSD_ELEMENT_CONFIG, offsetof(osdElementConfig_t, item_pos[OSD_SYS_WARNINGS]) },
+#endif
 
     // OSD stats enabled flags are stored as bitmapped values inside a 32bit parameter
     { "osd_stat_bitmask",     VAR_UINT32 | MASTER_VALUE, .config.u32Max = UINT32_MAX, PG_OSD_CONFIG, offsetof(osdConfig_t, enabled_stats)},
@@ -1509,7 +1525,7 @@ const clivalue_t valueTable[] = {
 #ifdef USE_MSP_DISPLAYPORT
     { "displayport_msp_col_adjust", VAR_INT8    | MASTER_VALUE, .config.minmax = { -6, 0 }, PG_DISPLAY_PORT_MSP_CONFIG, offsetof(displayPortProfile_t, colAdjust) },
     { "displayport_msp_row_adjust", VAR_INT8    | MASTER_VALUE, .config.minmax = { -3, 0 }, PG_DISPLAY_PORT_MSP_CONFIG, offsetof(displayPortProfile_t, rowAdjust) },
-    { "displayport_msp_attrs",      VAR_UINT8   | MASTER_VALUE | MODE_ARRAY, .config.array.length = 4, PG_DISPLAY_PORT_MSP_CONFIG, offsetof(displayPortProfile_t, attrValues) },
+    { "displayport_msp_fonts",      VAR_UINT8   | MASTER_VALUE | MODE_ARRAY, .config.array.length = 4, PG_DISPLAY_PORT_MSP_CONFIG, offsetof(displayPortProfile_t, fontSelection) },
     { "displayport_msp_use_device_blink",   VAR_UINT8   | MASTER_VALUE | MODE_LOOKUP, .config.lookup = { TABLE_OFF_ON }, PG_DISPLAY_PORT_MSP_CONFIG, offsetof(displayPortProfile_t, useDeviceBlink) },
 #endif
 

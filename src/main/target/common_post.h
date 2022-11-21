@@ -24,6 +24,63 @@
 
 #include "build/version.h"
 
+
+/*
+    BEGIN HARDWARE INCLUSIONS
+    
+    Simplified options for the moment, i.e. adding USE_MAG or USE_BARO and the entire driver suite is added.
+    In the future we can move to specific drivers being added only - to save flash space.
+*/
+
+#if defined(USE_MAG) && !defined(USE_FAKE_MAG)
+#define USE_MAG_DATA_READY_SIGNAL
+#define USE_MAG_HMC5883
+#define USE_MAG_SPI_HMC5883
+#define USE_MAG_QMC5883
+#define USE_MAG_LIS3MDL
+#define USE_MAG_AK8963
+#define USE_MAG_MPU925X_AK8963
+#define USE_MAG_SPI_AK8963
+#define USE_MAG_AK8975
+#endif
+
+#if defined(USE_BARO) && !defined(USE_FAKE_BARO)
+#define USE_BARO_MS5611
+#define USE_BARO_SPI_MS5611
+#define USE_BARO_BMP280
+#define USE_BARO_SPI_BMP280
+#define USE_BARO_BMP388
+#define USE_BARO_SPI_BMP388
+#define USE_BARO_LPS
+#define USE_BARO_SPI_LPS
+#define USE_BARO_QMP6988
+#define USE_BARO_SPI_QMP6988
+#define USE_BARO_DPS310
+#define USE_BARO_SPI_DPS310
+#define USE_BARO_BMP085
+#endif
+
+#if defined(USE_RX_SPI) 
+
+#define USE_RX_FRSKY_SPI_D
+#define USE_RX_FRSKY_SPI_X
+#define USE_RX_SFHSS_SPI
+#define USE_RX_REDPINE_SPI
+#define USE_RX_FRSKY_SPI_TELEMETRY
+#define USE_RX_CC2500_SPI_PA_LNA
+#define USE_RX_CC2500_SPI_DIVERSITY
+
+#define USE_RX_FLYSKY
+#define USE_RX_FLYSKY_SPI_LED
+
+#define USE_RX_SPEKTRUM
+#define USE_RX_SPEKTRUM_TELEMETRY
+
+#endif // defined(USE_RX_SPI)
+
+
+/* END HARDWARE INCLUSIONS */
+
 #if defined(USE_VTX_RTC6705_SOFTSPI)
 #define USE_VTX_RTC6705
 #endif
@@ -47,8 +104,7 @@
 #endif
 #endif
 
-// XXX Remove USE_BARO_BMP280 and USE_BARO_MS5611 if USE_I2C is not defined.
-// XXX This should go away buy editing relevant target.h files
+// Remove USE_BARO_BMP280 and USE_BARO_MS5611 if USE_I2C is not defined.
 #if !defined(USE_I2C)
 #if defined(USE_BARO_BMP280)
 #undef USE_BARO_BMP280
@@ -56,16 +112,6 @@
 #if defined(USE_BARO_MS5611)
 #undef USE_BARO_MS5611
 #endif
-#endif
-
-#if !defined(USE_MAG)
-#undef USE_MAG_DATA_READY_SIGNAL
-#undef USE_MAG_HMC5883
-#undef USE_MAG_SPI_HMC5883
-#undef USE_MAG_QMC5883
-#undef USE_MAG_LIS3MDL
-#undef USE_MAG_AK8963
-#undef USE_MAG_SPI_AK8963
 #endif
 
 #if !defined(USE_BARO) && !defined(USE_GPS)
@@ -76,8 +122,7 @@
 #define BARO_EOC_PIN NONE
 #endif
 
-
-#if !defined(USE_SERIAL_RX)
+#if !defined(USE_SERIALRX)
 #undef USE_SERIALRX_CRSF
 #undef USE_SERIALRX_IBUS
 #undef USE_SERIALRX_JETIEXBUS
@@ -200,17 +245,16 @@
 #define USE_FLASH_TOOLS
 #endif
 
-#if defined(USE_FLASH_W25M512)
-#define USE_FLASH_W25M
+#if defined(USE_FLASH_W25M512) || defined(USE_FLASH_W25Q128FV)
 #define USE_FLASH_M25P16
 #endif
 
 #if defined(USE_FLASH_W25M02G)
 #define USE_FLASH_W25N01G
-#define USE_FLASH_W25M
 #endif
 
 #if defined(USE_FLASH_M25P16) || defined(USE_FLASH_W25N01G)
+#define USE_FLASH_W25M
 #define USE_FLASH_CHIP
 #endif
 
@@ -266,7 +310,8 @@
 // Number of pins that needs pre-init
 #ifdef USE_SPI
 #ifndef SPI_PREINIT_COUNT
-#define SPI_PREINIT_COUNT 16 // 2 x 8 (GYROx2, BARO, MAG, MAX, FLASHx2, RX)
+// 2 x 8 (GYROx2, BARO, MAG, MAX, FLASHx2, RX)
+#define SPI_PREINIT_COUNT 16 
 #endif
 #endif
 
@@ -333,6 +378,10 @@
 #undef BEEPER_PWM_HZ
 #endif
 
+#if defined(USE_PWM) || defined(USE_DSHOT) || defined(USE_LED_STRIP) || defined(USE_TRANSPONDER) || defined(USE_BEEPER)
+#define USE_PWM_OUTPUT
+#endif
+
 #if defined(USE_DSHOT) || defined(USE_LED_STRIP) || defined(USE_TRANSPONDER)
 #define USE_TIMER_DMA
 #else
@@ -394,6 +443,11 @@ extern uint8_t __config_end;
 
 #if defined(USE_CUSTOM_DEFAULTS)
 #define USE_CUSTOM_DEFAULTS_ADDRESS
+#endif
+
+#if defined(USE_RX_EXPRESSLRS) && defined(STM32F411)
+#define RX_SPI_DEFAULT_PROTOCOL          RX_SPI_EXPRESSLRS
+#define RX_EXPRESSLRS_TIMER_INSTANCE     TIM5
 #endif
 
 #if defined(USE_RX_SPI) || defined (USE_SERIALRX_SRXL2)

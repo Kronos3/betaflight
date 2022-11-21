@@ -18,24 +18,23 @@
  * If not, see <http://www.gnu.org/licenses/>.
  */
 
-#pragma once
+#include "platform.h"
 
-#include "io/displayport_msp.h"
+#ifdef USE_RPM_FILTER
+
 #include "pg/pg.h"
+#include "pg/pg_ids.h"
 
-typedef struct displayPortProfile_s {
-    int8_t colAdjust;
-    int8_t rowAdjust;
-    bool invert;
-    uint8_t blackBrightness;
-    uint8_t whiteBrightness;
+#include "rpm_filter.h"
 
-    // For attribute-rich OSDs
+PG_REGISTER_WITH_RESET_TEMPLATE(rpmFilterConfig_t, rpmFilterConfig, PG_RPM_FILTER_CONFIG, 5);
 
-    uint8_t fontSelection[DISPLAYPORT_ATTR_COUNT];
-    uint8_t useDeviceBlink;    // Use device local blink capability
-} displayPortProfile_t;
+PG_RESET_TEMPLATE(rpmFilterConfig_t, rpmFilterConfig,
+    .rpm_filter_harmonics = 3,
+    .rpm_filter_min_hz = 100,
+    .rpm_filter_fade_range_hz = 50,
+    .rpm_filter_q = 500,
+    .rpm_filter_lpf_hz = 150
+);
 
-PG_DECLARE(displayPortProfile_t, displayPortProfileMsp);
-
-PG_DECLARE(displayPortProfile_t, displayPortProfileMax7456);
+#endif // USE_RPM_FILTER

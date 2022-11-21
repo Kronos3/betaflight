@@ -19,42 +19,54 @@
  */
 
 #pragma once
-#define TARGET_BOARD_IDENTIFIER "S4SX"
 
-#define USBD_PRODUCT_STRING     "Betaflight STM32F411SX1280"
+#define TARGET_BOARD_IDENTIFIER "SH72"
+
+#define USBD_PRODUCT_STRING     "Betaflight STM32H723"
+
+#define USE_I2C_DEVICE_1
+#define USE_I2C_DEVICE_2
+#define USE_I2C_DEVICE_3
+#define USE_I2C_DEVICE_4
+#define USE_I2C_DEVICE_5
 
 #define USE_UART1
 #define USE_UART2
+#define USE_UART3
+#define USE_UART4
+#define USE_UART5
 #define USE_UART6
+#define USE_UART7
+#define USE_UART8
+#define USE_UART9
+#define USE_LPUART1
 
-#define SERIAL_PORT_COUNT       (UNIFIED_SERIAL_PORT_COUNT + 3)
-
-#define USE_INVERTER
+#define SERIAL_PORT_COUNT       (UNIFIED_SERIAL_PORT_COUNT + 10)
 
 #define USE_SPI_DEVICE_1
 #define USE_SPI_DEVICE_2
 #define USE_SPI_DEVICE_3
+#define USE_SPI_DEVICE_4
+#define USE_SPI_DEVICE_5
+#define USE_SPI_DEVICE_6
 
 #define TARGET_IO_PORTA 0xffff
 #define TARGET_IO_PORTB 0xffff
 #define TARGET_IO_PORTC 0xffff
 #define TARGET_IO_PORTD 0xffff
 #define TARGET_IO_PORTE 0xffff
+#define TARGET_IO_PORTF 0xffff
+#define TARGET_IO_PORTG 0xffff
 
-#define DEFAULT_RX_FEATURE      FEATURE_RX_SPI
-#define RX_SPI_DEFAULT_PROTOCOL RX_SPI_EXPRESSLRS
-
-#define USE_RX_EXPRESSLRS
-#define USE_RX_EXPRESSLRS_TELEMETRY
-#define USE_RX_SX1280
-#define RX_EXPRESSLRS_TIMER_INSTANCE     TIM5
-#define RX_CHANNELS_AETR
+#define USE_I2C
+#define I2C_FULL_RECONFIGURABILITY
 
 #define USE_BEEPER
 
-// MPU interrupt
-
 #if !defined(CLOUD_BUILD)
+
+#define USE_MAG
+#define USE_BARO
 
 #define USE_ACC
 #define USE_GYRO
@@ -73,33 +85,10 @@
 #define USE_GYRO_SPI_ICM42688P
 #define USE_ACC_SPI_ICM42605
 #define USE_ACC_SPI_ICM42688P
-
-#ifdef USE_MAG
-#define USE_MAG_DATA_READY_SIGNAL
-#define USE_MAG_HMC5883
-#define USE_MAG_SPI_HMC5883
-#define USE_MAG_QMC5883
-#define USE_MAG_LIS3MDL
-#define USE_MAG_AK8963
-#define USE_MAG_MPU925X_AK8963
-#define USE_MAG_SPI_AK8963
-#define USE_MAG_AK8975
-#endif
-
-#ifdef USE_BARO
-#define USE_BARO_MS5611
-#define USE_BARO_SPI_MS5611
-#define USE_BARO_BMP280
-#define USE_BARO_SPI_BMP280
-#define USE_BARO_BMP388
-#define USE_BARO_SPI_BMP388
-#define USE_BARO_LPS
-#define USE_BARO_SPI_LPS
-#define USE_BARO_QMP6988
-#define USE_BARO_SPI_QMP6988
-#define USE_BARO_DPS310
-#define USE_BARO_SPI_DPS310
-#endif
+#define USE_RX_SPI
+#define USE_ACC_MPU6050
+#define USE_GYRO_MPU6050
+#define USE_ACCGYRO_BMI160
 
 #define USE_FLASHFS
 #define USE_FLASH_TOOLS
@@ -112,7 +101,19 @@
 
 #define USE_MAX7456
 
-#define USE_RX_SPI
+#define USE_VTX_RTC6705
+#define USE_VTX_RTC6705_SOFTSPI
+
+#define USE_TRANSPONDER
+
+#define USE_RANGEFINDER
+#define USE_RANGEFINDER_HCSR04
+#define USE_RANGEFINDER_TF
+
+#define USE_RX_EXPRESSLRS
+#define RX_EXPRESSLRS_TIMER_INSTANCE     TIM5
+#define USE_RX_SX1280
+#define USE_RX_SX127X
 
 #define USE_SDCARD
 

@@ -241,7 +241,7 @@ static bool mspIsMspArmingEnabled(void)
 static uint8_t mspPassthroughMode;
 static uint8_t mspPassthroughArgument;
 
-#ifdef USE_ESCSERIAL
+#if defined(USE_ESCSERIAL) && defined(USE_SERIAL_4WAY_BLHELI_INTERFACE)
 static void mspEscPassthroughFn(serialPort_t *serialPort)
 {
     escEnablePassthrough(serialPort, &motorConfig()->dev, mspPassthroughArgument, mspPassthroughMode);
@@ -330,7 +330,7 @@ static void mspFcSetPassthroughCommand(sbuf_t *dst, sbuf_t *src, mspPostProcessF
         }
         FALLTHROUGH;
 #endif // USE_ESCSERIAL
-#endif //USE_SERIAL_4WAY_BLHELI_INTERFACE
+#endif // USE_SERIAL_4WAY_BLHELI_INTERFACE
     default:
         sbufWriteU8(dst, 0);
     }
@@ -983,10 +983,10 @@ static bool mspCommonProcessOutCommand(int16_t cmdMSP, sbuf_t *dst, mspPostProce
         sbufWriteU8(dst, osdFlags);
 
 #ifdef USE_MAX7456
-        // send video system (AUTO/PAL/NTSC)
+        // send video system (AUTO/PAL/NTSC/HD)
         sbufWriteU8(dst, vcdProfile()->video_system);
 #else
-        sbufWriteU8(dst, 0);
+        sbufWriteU8(dst, VIDEO_SYSTEM_HD);
 #endif
 
 #ifdef USE_OSD
@@ -1053,6 +1053,14 @@ static bool mspCommonProcessOutCommand(int16_t cmdMSP, sbuf_t *dst, mspPostProce
         sbufWriteU8(dst, osdConfig()->camera_frame_height);
 
 #endif // USE_OSD
+        break;
+    }
+
+    case MSP_OSD_CANVAS: {
+#ifdef USE_OSD
+        sbufWriteU8(dst, osdConfig()->canvas_cols);
+        sbufWriteU8(dst, osdConfig()->canvas_rows);
+#endif
         break;
     }
 
@@ -1151,6 +1159,15 @@ static bool mspProcessOutCommand(mspDescriptor_t srcDesc, int16_t cmdMSP, sbuf_t
         }
         break;
 
+case MSP_NAME:
+        {
+            const int nameLen = strlen(pilotConfig()->craftName);
+            for (int i = 0; i < nameLen; i++) {
+                sbufWriteU8(dst, pilotConfig()->craftName[i]);
+            }
+        }
+        break;
+
 #ifdef USE_SERVOS
     case MSP_SERVO:
         sbufWriteData(dst, &servo, MAX_SUPPORTED_SERVOS * 2);
@@ -1236,7 +1253,7 @@ static bool mspProcessOutCommand(mspDescriptor_t srcDesc, int16_t cmdMSP, sbuf_t
 
                     // Voltage -> 0-63,75V step 0,25V
                     if ((dshotTelemetryState.motorState[i].telemetryTypes & (1 << DSHOT_TELEMETRY_TYPE_VOLTAGE)) != 0) {
-                    	escVoltage = dshotTelemetryState.motorState[i].telemetryData[DSHOT_TELEMETRY_TYPE_VOLTAGE] >> 2;
+                        escVoltage = dshotTelemetryState.motorState[i].telemetryData[DSHOT_TELEMETRY_TYPE_VOLTAGE] >> 2;
                     }
                 }
             }
@@ -1297,7 +1314,7 @@ static bool mspProcessOutCommand(mspDescriptor_t srcDesc, int16_t cmdMSP, sbuf_t
             if (isBlinking) {
                 displayAttr |= DISPLAYPORT_ATTR_BLINK;
             }
-            sbufWriteU8(dst, displayAttr);  // see displayPortAttr_e
+            sbufWriteU8(dst, displayAttr);  // see displayPortSeverity_e
             sbufWriteU8(dst, warningsLen);  // length byte followed by the actual characters
             for (unsigned i = 0; i < warningsLen; i++) {
                 sbufWriteU8(dst, warningsBuffer[i]);
@@ -2020,6 +2037,7 @@ static bool mspProcessOutCommand(mspDescriptor_t srcDesc, int16_t cmdMSP, sbuf_t
 #else
         sbufWriteU8(dst, 0);
 #endif
+        sbufWriteU8(dst, currentPidProfile->tpa_mode);
         sbufWriteU8(dst, currentPidProfile->tpa_rate);
         sbufWriteU16(dst, currentPidProfile->tpa_breakpoint);   // was currentControlRateProfile->tpa_breakpoint
         break;
@@ -3168,10 +3186,10 @@ static mspResult_e mspProcessInCommand(mspDescriptor_t srcDesc, int16_t cmdMSP, 
             sbufReadU8(src);
 #endif
         }
-        if (sbufBytesRemaining(src) >= 3) {
+        if (sbufBytesRemaining(src) >= 4) {
             // Added in API 1.45
-            value = sbufReadU8(src);
-            currentPidProfile->tpa_rate = MIN(value, TPA_MAX);
+            currentPidProfile->tpa_mode = sbufReadU8(src);
+            currentPidProfile->tpa_rate = MIN(sbufReadU8(src), TPA_MAX);
             currentPidProfile->tpa_breakpoint = sbufReadU16(src);
         }
 
@@ -3812,6 +3830,16 @@ static mspResult_e mspProcessInCommand(mspDescriptor_t srcDesc, int16_t cmdMSP, 
         break;
 #endif
 
+    case MSP_SET_NAME:
+        memset(pilotConfigMutable()->craftName, 0, ARRAYLEN(pilotConfig()->craftName));
+        for (unsigned int i = 0; i < MIN(MAX_NAME_LENGTH, dataSize); i++) {
+            pilotConfigMutable()->craftName[i] = sbufReadU8(src);
+        }
+#ifdef USE_OSD
+        osdAnalyzeActiveElements();
+#endif
+        break;
+
 #ifdef USE_RTC_TIME
     case MSP_SET_RTC:
         {
@@ -4160,6 +4188,16 @@ static mspResult_e mspCommonProcessInCommand(mspDescriptor_t srcDesc, int16_t cm
             if (!displayWriteFontCharacter(osdDisplayPort, addr, &chr)) {
                 return MSP_RESULT_ERROR;
             }
+        }
+        break;
+
+    case MSP_SET_OSD_CANVAS:
+        {
+            osdConfigMutable()->canvas_cols = sbufReadU8(src);
+            osdConfigMutable()->canvas_rows = sbufReadU8(src);
+
+            // An HD VTX has communicated it's canvas size, so we must be in HD mode
+            vcdProfileMutable()->video_system = VIDEO_SYSTEM_HD;
         }
         break;
 #endif // OSD
